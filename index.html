@@ -16,6 +16,9 @@
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
+    <!-- EmailJS SDK -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+
     <script>
         tailwind.config = {
             theme: {
@@ -833,6 +836,32 @@
 
     <!-- Script Utama (Ditulis ulang dengan integrasi Firebase) -->
     <script>
+        // INISIALISASI EMAILJS
+        (function() {
+            const emailJsKey = "service_bfvfmcg"; // GANTI DENGAN PUBLIC KEY EMAILJS ANDA
+            if(emailJsKey !== "service_bfvfmcg") {
+                emailjs.init(emailJsKey); 
+            }
+        })();
+
+        // Ganti isi di bawah ini dengan firebaseConfig milik Anda dari Firebase Console
+        const myConfig = {
+            apiKey: "AIzaSyBAX8I4NAra7q1R1DpJmzdlDdtd8gNJw-U",
+            authDomain: "kongkonan-app.firebaseapp.com",
+            projectId: "kongkonan-app",
+            storageBucket: "kongkonan-app.firebasestorage.app",
+            messagingSenderId: "267178141225",
+            appId: "1:267178141225:web:97a56c6e67287f9c165e38"
+        };
+        
+        // Mencegah error "API Key Not Valid" saat masa pratinjau / pengembangan lokal.
+        // Kode ini akan otomatis tersinkron ke Firebase jika Anda sudah memasukkan apiKey yang asli.
+        let myConfigStr = null;
+        if (!myConfig.apiKey.includes("AIzaSyBAX8I4NAra7q1R1DpJmzdlDdtd8gNJw-U")) {
+            myConfigStr = JSON.stringify(myConfig);
+            window.__app_id = "kongkonan-produksi-1"; 
+        }
+
         // Eksport fungsi ke window agar dapat dipanggil oleh HTML onclick event
         window.showToast = showToast; window.doLogin = doLogin; window.doRegister = doRegister;
         window.doVerify = doVerify; window.requestReset = requestReset; window.applyReset = applyReset;
@@ -960,12 +989,12 @@
         let db, auth, firestore, isCloudSyncEnabled = false;
 
         async function initFirebase() {
-            const firebaseConfigStr = typeof __firebase_config !== 'undefined' ? __firebase_config : null;
+            const firebaseConfigStr = myConfigStr || (typeof __firebase_config !== 'undefined' ? __firebase_config : null);
             if (!firebaseConfigStr) return initAppLocal();
 
             try {
                 const firebaseConfig = JSON.parse(firebaseConfigStr);
-                const appId = typeof __app_id !== 'undefined' ? __app_id : 'kongkonan-app';
+                const appId = typeof window.__app_id !== 'undefined' ? window.__app_id : (typeof __app_id !== 'undefined' ? __app_id : 'kongkonan-app');
 
                 const { initializeApp } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js");
                 const { getAuth, signInWithCustomToken, signInAnonymously } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js");
@@ -1059,21 +1088,21 @@
 
         async function saveCatalogDB() {
             if (isCloudSyncEnabled && db && firestore) {
-                const appId = typeof __app_id !== 'undefined' ? __app_id : 'kongkonan-app';
+                const appId = typeof window.__app_id !== 'undefined' ? window.__app_id : (typeof __app_id !== 'undefined' ? __app_id : 'kongkonan-app');
                 await firestore.setDoc(firestore.doc(db, 'artifacts', appId, 'public', 'data', 'kongkonan_db', 'catalog'), { data: catalogData });
             } else { localStorage.setItem(DB_CATALOG, JSON.stringify(catalogData)); }
         }
 
         async function saveUsersDB() {
             if (isCloudSyncEnabled && db && firestore) {
-                const appId = typeof __app_id !== 'undefined' ? __app_id : 'kongkonan-app';
+                const appId = typeof window.__app_id !== 'undefined' ? window.__app_id : (typeof __app_id !== 'undefined' ? __app_id : 'kongkonan-app');
                 await firestore.setDoc(firestore.doc(db, 'artifacts', appId, 'public', 'data', 'kongkonan_db', 'users'), { data: registeredUsers });
             } else { localStorage.setItem(DB_USERS, JSON.stringify(registeredUsers)); }
         }
 
         async function saveOrdersDB() {
             if (isCloudSyncEnabled && db && firestore) {
-                const appId = typeof __app_id !== 'undefined' ? __app_id : 'kongkonan-app';
+                const appId = typeof window.__app_id !== 'undefined' ? window.__app_id : (typeof __app_id !== 'undefined' ? __app_id : 'kongkonan-app');
                 await firestore.setDoc(firestore.doc(db, 'artifacts', appId, 'public', 'data', 'kongkonan_db', 'orders'), { data: orderHistory });
             } else { localStorage.setItem(DB_ORDERS, JSON.stringify(orderHistory)); }
         }
@@ -1134,21 +1163,44 @@
                 closeAuthModal(); showToast(`Selamat datang kembali, ${user.name}!`); setupUIBasedOnRole();
             } else { showToast("No HP/Email atau Password salah!"); }
         }
-        async function doRegister() {
+        
+        function doRegister() {
             const name = document.getElementById('regName').value.trim(); const phone = document.getElementById('regPhone').value.trim();
             const email = document.getElementById('regEmail').value.trim().toLowerCase(); const pass = document.getElementById('regPass').value; const address = document.getElementById('regAddress').value.trim();
             if(!name || !phone || !email || !pass || !address) return showToast("Semua kolom wajib diisi!");
             if(pass.length < 6) return showToast("Password minimal 6 karakter!");
             if(registeredUsers.find(u => u.phone === phone)) return showToast("No HP sudah terdaftar!");
             if(registeredUsers.find(u => u.email === email)) return showToast("Alamat Email sudah terdaftar!");
+            
             tempUser = { name, phone, email, password: pass, address, role: 'user', isBlocked: false };
             authOtpCode = Math.floor(1000 + Math.random() * 9000); 
-            await customAlert("Simulasi Pengiriman Email", `Aplikasi saat ini dalam mode Demo/Tanpa Server Mail.\n\nKode OTP Anda adalah: ${authOtpCode}\n\n(Untuk memudahkan, kode ini akan otomatis diisikan ke kolom OTP)`, 'bg-blue-100 text-blue-500', '<i class="fa-solid fa-envelope-open-text"></i>');
-            showToast("Berhasil disimulasikan!"); toggleAuthForm('verify');
             
-            // Auto-fill OTP untuk kemudahan UX karena tidak ada real email
-            document.getElementById('verifyOtp').value = authOtpCode;
+            const serviceId = "service_bfvfmcg";
+            const templateId = "template_y1qeova";
+
+            if (serviceId !== "service_bfvfmcg") {
+                showToast("Sedang mengirim kode OTP ke email Anda...");
+                // Panggil EmailJS untuk registrasi
+                emailjs.send(serviceId, templateId, {
+                    to_name: name,
+                    to_email: email,
+                    otp_code: authOtpCode
+                }).then(function(response) {
+                    showToast("Kode OTP berhasil dikirim! Cek inbox/spam email Anda.");
+                    toggleAuthForm('verify');
+                    document.getElementById('verifyOtp').value = ''; // Kosongkan agar diisi manual
+                }, function(error) {
+                    console.error('EmailJS Error:', error);
+                    showToast("Gagal mengirim email. Pastikan email valid!");
+                });
+            } else {
+                // Simulasi jika belum diganti (saat pratinjau)
+                customAlert("Simulasi Email Registrasi", `Kode OTP Anda adalah: ${authOtpCode}\n\n(Akan terisi otomatis karena Anda masih menggunakan mode pratinjau)`, 'bg-blue-100 text-blue-500', '<i class="fa-solid fa-envelope-open-text"></i>');
+                toggleAuthForm('verify');
+                document.getElementById('verifyOtp').value = authOtpCode;
+            }
         }
+        
         function doVerify() {
             const inputOtp = document.getElementById('verifyOtp').value;
             if(inputOtp == authOtpCode) {
@@ -1158,19 +1210,44 @@
                 tempUser = null; authOtpCode = null; document.getElementById('verifyOtp').value = '';
             } else { showToast("Kode OTP salah! Silakan periksa kembali."); }
         }
-        async function requestReset() {
+        
+        function requestReset() {
             const email = document.getElementById('forgotEmail').value.trim().toLowerCase();
             if(!email) return showToast("Masukkan alamat email Anda terlebih dahulu!");
             const user = registeredUsers.find(u => u.email === email);
+            
             if(user) {
                 resetUserEmail = email; authOtpCode = Math.floor(1000 + Math.random() * 9000);
-                await customAlert("Simulasi Email Reset", `Aplikasi saat ini dalam mode Demo.\n\nKode OTP Reset Password Anda adalah: ${authOtpCode}\n\n(Untuk memudahkan, kode ini akan otomatis diisikan ke kolom OTP)`, 'bg-orange-100 text-orange-500', '<i class="fa-solid fa-key"></i>');
-                showToast("Berhasil disimulasikan!"); toggleAuthForm('reset');
                 
-                // Auto-fill OTP untuk kemudahan UX karena tidak ada real email
-                document.getElementById('resetOtp').value = authOtpCode;
-            } else { showToast("Alamat email tidak ditemukan dalam sistem!"); }
+                const serviceId = "service_bfvfmcg";
+                const templateId = "template_kehunvo";
+
+                if (serviceId !== "service_bfvfmcg") {
+                    showToast("Sedang mengirim kode reset ke email Anda...");
+                    // Panggil EmailJS untuk Reset Password
+                    emailjs.send(serviceId, templateId, {
+                        to_name: user.name,
+                        to_email: email,
+                        otp_code: authOtpCode
+                    }).then(function(response) {
+                        showToast("Kode Reset berhasil dikirim! Cek inbox/spam email Anda.");
+                        toggleAuthForm('reset');
+                        document.getElementById('resetOtp').value = ''; // Kosongkan agar diisi manual
+                    }, function(error) {
+                        console.error('EmailJS Error:', error);
+                        showToast("Gagal mengirim email reset. Coba lagi nanti.");
+                    });
+                } else {
+                    // Simulasi jika belum diganti
+                    customAlert("Simulasi Email Reset", `Kode OTP Lupa Password: ${authOtpCode}\n\n(Akan terisi otomatis karena Anda masih menggunakan mode pratinjau)`, 'bg-orange-100 text-orange-500', '<i class="fa-solid fa-key"></i>');
+                    toggleAuthForm('reset');
+                    document.getElementById('resetOtp').value = authOtpCode;
+                }
+            } else { 
+                showToast("Alamat email tidak ditemukan dalam sistem!"); 
+            }
         }
+        
         function applyReset() {
             const inputOtp = document.getElementById('resetOtp').value; const newPass = document.getElementById('resetPass').value;
             if(!inputOtp || !newPass) return showToast("OTP dan Password Baru wajib diisi!");
@@ -1782,28 +1859,6 @@
             if (typeof __firebase_config !== 'undefined' && __firebase_config) initFirebase();
             else initAppLocal();
         };
-
-
-
     </script>
-<script>
-        // Ganti isi di bawah ini dengan firebaseConfig milik Anda sendiri
-        const myConfig = {
-            apiKey: "AIzaSyBAX8I4NAra7q1R1DpJmzdlDdtd8gNJw-U",
-            authDomain: "kongkonan-app.firebaseapp.com",
-            projectId: "kongkonan-app",
-            storageBucket: "kongkonan-app.firebasestorage.app",
-            messagingSenderId: "267178141225",
-            appId: "1:267178141225:web:97a56c6e67287f9c165e38"
-        };
-        
-        // JANGAN UBAH DUA BARIS INI
-        // Ini untuk memicu sistem Cloud Sync otomatis di aplikasi Anda
-        const __firebase_config = JSON.stringify(myConfig);
-        const __app_id = "kongkonan-produksi-1"; 
-    </script>
-
-  
-
 </body>
 </html>
