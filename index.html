@@ -1174,14 +1174,13 @@
 
             showToast("Sedang mengirim kode OTP ke email Anda...");
             // Panggil EmailJS untuk registrasi
-            emailjs.send(serviceId, templateId, {
-            to_name: name,
-            to_email: email,
-            otp_code: authOtpCode
+            emailjs.send("service_bfvfmcg", "template_y1qeova", {
+                to_email: email,        // Harus persis dengan {{to_email}} di gambar
+                otp_code: authOtpCode   // Harus persis dengan {{otp_code}} di gambar
             }).then(function(response) {
                 showToast("Kode OTP berhasil dikirim! Cek inbox/spam email Anda.");
                 toggleAuthForm('verify');
-                document.getElementById('verifyOtp').value = ''; // Kosongkan agar diisi manual
+                document.getElementById('verifyOtp').value = ''; 
             }, function(error) {
                 console.error('EmailJS Error:', error);
                 showToast("Gagal mengirim email. Pastikan email valid!");
@@ -1841,3 +1840,4 @@
     </script>
 </body>
 </html>
+
