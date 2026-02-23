@@ -838,10 +838,8 @@
     <script>
         // INISIALISASI EMAILJS
         (function() {
-            const emailJsKey = "service_bfvfmcg"; // GANTI DENGAN PUBLIC KEY EMAILJS ANDA
-            if(emailJsKey !== "service_bfvfmcg") {
-                emailjs.init(emailJsKey); 
-            }
+    const emailJsKey = "G1wdjTAduWWRtdu09";
+    emailjs.init(emailJsKey); // Hapus pengecekan IF agar selalu diinisialisasi
         })();
 
         // Ganti isi di bawah ini dengan firebaseConfig milik Anda dari Firebase Console
@@ -853,15 +851,11 @@
             messagingSenderId: "267178141225",
             appId: "1:267178141225:web:97a56c6e67287f9c165e38"
         };
-        
-        // Mencegah error "API Key Not Valid" saat masa pratinjau / pengembangan lokal.
-        // Kode ini akan otomatis tersinkron ke Firebase jika Anda sudah memasukkan apiKey yang asli.
-        let myConfigStr = null;
-        if (!myConfig.apiKey.includes("AIzaSyBAX8I4NAra7q1R1DpJmzdlDdtd8gNJw-U")) {
-            myConfigStr = JSON.stringify(myConfig);
-            window.__app_id = "kongkonan-produksi-1"; 
-        }
 
+        // Langsung ubah ke string dan tetapkan App ID tanpa syarat
+        let myConfigStr = JSON.stringify(myConfig);
+        window.__app_id = "kongkonan-produksi-1";
+        
         // Eksport fungsi ke window agar dapat dipanggil oleh HTML onclick event
         window.showToast = showToast; window.doLogin = doLogin; window.doRegister = doRegister;
         window.doVerify = doVerify; window.requestReset = requestReset; window.applyReset = applyReset;
@@ -1178,27 +1172,20 @@
             const serviceId = "service_bfvfmcg";
             const templateId = "template_y1qeova";
 
-            if (serviceId !== "service_bfvfmcg") {
-                showToast("Sedang mengirim kode OTP ke email Anda...");
-                // Panggil EmailJS untuk registrasi
-                emailjs.send(serviceId, templateId, {
-                    to_name: name,
-                    to_email: email,
-                    otp_code: authOtpCode
-                }).then(function(response) {
-                    showToast("Kode OTP berhasil dikirim! Cek inbox/spam email Anda.");
-                    toggleAuthForm('verify');
-                    document.getElementById('verifyOtp').value = ''; // Kosongkan agar diisi manual
-                }, function(error) {
-                    console.error('EmailJS Error:', error);
-                    showToast("Gagal mengirim email. Pastikan email valid!");
-                });
-            } else {
-                // Simulasi jika belum diganti (saat pratinjau)
-                customAlert("Simulasi Email Registrasi", `Kode OTP Anda adalah: ${authOtpCode}\n\n(Akan terisi otomatis karena Anda masih menggunakan mode pratinjau)`, 'bg-blue-100 text-blue-500', '<i class="fa-solid fa-envelope-open-text"></i>');
+            showToast("Sedang mengirim kode OTP ke email Anda...");
+            // Panggil EmailJS untuk registrasi
+            emailjs.send(serviceId, templateId, {
+            to_name: name,
+            to_email: email,
+            otp_code: authOtpCode
+            }).then(function(response) {
+                showToast("Kode OTP berhasil dikirim! Cek inbox/spam email Anda.");
                 toggleAuthForm('verify');
-                document.getElementById('verifyOtp').value = authOtpCode;
-            }
+                document.getElementById('verifyOtp').value = ''; // Kosongkan agar diisi manual
+            }, function(error) {
+                console.error('EmailJS Error:', error);
+                showToast("Gagal mengirim email. Pastikan email valid!");
+            });
         }
         
         function doVerify() {
@@ -1222,27 +1209,20 @@
                 const serviceId = "service_bfvfmcg";
                 const templateId = "template_kehunvo";
 
-                if (serviceId !== "service_bfvfmcg") {
-                    showToast("Sedang mengirim kode reset ke email Anda...");
-                    // Panggil EmailJS untuk Reset Password
-                    emailjs.send(serviceId, templateId, {
-                        to_name: user.name,
-                        to_email: email,
-                        otp_code: authOtpCode
-                    }).then(function(response) {
-                        showToast("Kode Reset berhasil dikirim! Cek inbox/spam email Anda.");
-                        toggleAuthForm('reset');
-                        document.getElementById('resetOtp').value = ''; // Kosongkan agar diisi manual
-                    }, function(error) {
-                        console.error('EmailJS Error:', error);
-                        showToast("Gagal mengirim email reset. Coba lagi nanti.");
-                    });
-                } else {
-                    // Simulasi jika belum diganti
-                    customAlert("Simulasi Email Reset", `Kode OTP Lupa Password: ${authOtpCode}\n\n(Akan terisi otomatis karena Anda masih menggunakan mode pratinjau)`, 'bg-orange-100 text-orange-500', '<i class="fa-solid fa-key"></i>');
+                showToast("Sedang mengirim kode reset ke email Anda...");
+                // Panggil EmailJS untuk Reset Password
+                emailjs.send(serviceId, templateId, {
+                    to_name: user.name,
+                    to_email: email,
+                    otp_code: authOtpCode
+                }).then(function(response) {
+                    showToast("Kode Reset berhasil dikirim! Cek inbox/spam email Anda.");
                     toggleAuthForm('reset');
-                    document.getElementById('resetOtp').value = authOtpCode;
-                }
+                    document.getElementById('resetOtp').value = ''; 
+                }, function(error) {
+                    console.error('EmailJS Error:', error);
+                    showToast("Gagal mengirim email reset. Coba lagi nanti.");
+                });
             } else { 
                 showToast("Alamat email tidak ditemukan dalam sistem!"); 
             }
@@ -1856,9 +1836,8 @@
 
         // --- STARTUP APP --- //
         window.onload = function() {
-            if (typeof __firebase_config !== 'undefined' && __firebase_config) initFirebase();
-            else initAppLocal();
-        };
+        initFirebase(); // Selalu paksa coba koneksi Firebase saat aplikasi dibuka
+            };
     </script>
 </body>
 </html>
