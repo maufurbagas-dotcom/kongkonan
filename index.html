@@ -838,7 +838,7 @@
     <script>
         // INISIALISASI EMAILJS
         (function() {
-    const emailJsKey = "G1wdjTAduWWRtdu09";
+    const emailJsKey = "ToALyN4g9m8qy_QG7";
     emailjs.init(emailJsKey); // Hapus pengecekan IF agar selalu diinisialisasi
         })();
 
@@ -855,7 +855,7 @@
         // Langsung ubah ke string dan tetapkan App ID tanpa syarat
         let myConfigStr = JSON.stringify(myConfig);
         window.__app_id = "kongkonan-produksi-1";
-        
+
         // Eksport fungsi ke window agar dapat dipanggil oleh HTML onclick event
         window.showToast = showToast; window.doLogin = doLogin; window.doRegister = doRegister;
         window.doVerify = doVerify; window.requestReset = requestReset; window.applyReset = applyReset;
@@ -1222,6 +1222,7 @@
                     console.error('EmailJS Error:', error);
                     showToast("Gagal mengirim email reset. Coba lagi nanti.");
                 });
+                
             } else { 
                 showToast("Alamat email tidak ditemukan dalam sistem!"); 
             }
@@ -1840,4 +1841,3 @@
     </script>
 </body>
 </html>
-
